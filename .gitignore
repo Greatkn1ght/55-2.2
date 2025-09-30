@@ -7,6 +7,8 @@ __pypackages__/
 celerybeat.pid
 celerybeat-schedule.db
 
+.DS_Store
+
 .env
 .venv
 env/
@@ -17,3 +19,8 @@ venv/
 
 db.sqlite3
 .idea
+
+# Игнорировать все файлы в папке migrations
+**/migrations/*
+# Но не игнорировать __init__.py
+!**/migrations/__init__.py
