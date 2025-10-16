@@ -45,3 +45,19 @@ class ConfirmationSerializer(serializers.Serializer):
             raise ValidationError('Неверный код подтверждения!')
 
         return attrs
+    
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ('id', 'email', 'phone_number', 'is_superuser')
+
+    def validate(self, attrs):
+        is_superuser = attrs.get('is_superuser', self.instance.is_superuser if self.instance else False)
+        phone_number = attrs.get('phone_number', getattr(self.instance, 'phone_number', None))
+        
+        if is_superuser and not phone_number:
+            raise serializers.ValidationError({
+                'phone_number': 'Phone number is required for superuser.'
+            })
+        
+        return attrs
