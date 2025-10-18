@@ -1,11 +1,11 @@
 from collections import OrderedDict
-from django.db import transaction
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
+from common.permissions import IsModerator
 
 from .models import Category, Product, Review
 from .serializers import (
@@ -68,23 +68,29 @@ class ProductListCreateAPIView(ListCreateAPIView):
     queryset = Product.objects.select_related('category').all()
     serializer_class = ProductSerializer
     pagination_class = CustomPagination
+    permission_classes = [IsModerator]
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Product.objects.all()
+        return Product.objects.filter(owner=user)
+    
     def post(self, request, *args, **kwargs):
         serializer = ProductValidateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Get validated data
         title = serializer.validated_data.get('title')
         description = serializer.validated_data.get('description')
         price = serializer.validated_data.get('price')
         category = serializer.validated_data.get('category')
 
-        # Create product
         product = Product.objects.create(
             title=title,
             description=description,
             price=price,
-            category=category
+            category=category,
+            owner = request.user
         )
 
         return Response(data=ProductSerializer(product).data,
@@ -95,6 +101,7 @@ class ProductDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.select_related('category').all()
     serializer_class = ProductSerializer
     lookup_field = 'id'
+    permission_classes = [IsModerator]
 
     def put(self, request, *args, **kwargs):
         product = self.get_object()
@@ -105,6 +112,7 @@ class ProductDetailAPIView(RetrieveUpdateDestroyAPIView):
         product.description = serializer.validated_data.get('description')
         product.price = serializer.validated_data.get('price')
         product.category = serializer.validated_data.get('category')
+        product.owner = request.user
         product.save()
 
         return Response(data=ProductSerializer(product).data)
@@ -120,12 +128,10 @@ class ReviewViewSet(ModelViewSet):
         serializer = ReviewValidateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Get validated data
         text = serializer.validated_data.get('text')
         stars = serializer.validated_data.get('stars')
         product = serializer.validated_data.get('product')
 
-        # Create review
         review = Review.objects.create(
             text=text,
             stars=stars,

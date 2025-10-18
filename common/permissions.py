@@ -1,4 +1,4 @@
-from rest_permission import BasePermission, SAFE_METHODS
+from rest_framework.permissions import BasePermission
 
 class IsModerator(BasePermission):
     def has_permission(self, request, view):
@@ -14,4 +14,4 @@ class IsModerator(BasePermission):
             return True
         
         owner = getattr(obj, 'owner', None)
-        return owner == request.user & request.method in SAFE_METHODS
+        return owner == request.user 
