@@ -6,6 +6,8 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework.generics import CreateAPIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from users.serializers import CustomTokenObtainPairSerializer
 
 from .serializers import (
     RegisterValidateSerializer,
@@ -52,12 +54,14 @@ class RegistrationAPIView(CreateAPIView):
 
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
+        birthdate = serializer.validated_data.get('birthdate')
 
         # Use transaction to ensure data consistency
         with transaction.atomic():
             user = CustomUser.objects.create_user(
                 email=email,
                 password=password,
+                birthdate = birthdate,
                 is_active=False
             )
 
@@ -103,3 +107,6 @@ class ConfirmUserAPIView(CreateAPIView):
                 'key': token.key
             }
         )
+    
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer

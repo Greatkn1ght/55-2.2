@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from .models import ConfirmationCode
 from users.models import CustomUser
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class UserBaseSerializer(serializers.Serializer):
@@ -49,7 +50,7 @@ class ConfirmationSerializer(serializers.Serializer):
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('id', 'email', 'phone_number', 'is_superuser')
+        fields = ('id', 'email', 'phone_number', 'is_superuser', 'birthdate')
 
     def validate(self, attrs):
         is_superuser = attrs.get('is_superuser', self.instance.is_superuser if self.instance else False)
@@ -61,3 +62,11 @@ class CustomUserSerializer(serializers.ModelSerializer):
             })
         
         return attrs
+    
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['birthdate'] = str(user.birthdate)
+
+        return token

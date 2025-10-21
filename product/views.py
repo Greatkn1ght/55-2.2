@@ -6,6 +6,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from common.permissions import IsModerator
+from common.validators import validate_age
 
 from .models import Category, Product, Review
 from .serializers import (
@@ -77,6 +78,9 @@ class ProductListCreateAPIView(ListCreateAPIView):
         return Product.objects.filter(owner=user)
     
     def post(self, request, *args, **kwargs):
+        birthdate = getattr(request.user, 'birthdate', None)
+        validate_age(birthdate)
+
         serializer = ProductValidateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
